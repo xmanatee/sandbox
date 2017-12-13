@@ -1,0 +1,35 @@
+html{
+    height: 100%;
+}
+
+body{
+    height: 100%;
+    overflow: hidden;
+    color: white;
+    font-size: 50px;
+    text-align: center;
+}
+
+#keyboard {
+    display: inline-block;
+    margin: auto;
+    height: 50%;
+    width: 90%
+}
+
+.key {
+    display: block;
+    float: left;
+
+    width: 13%;
+    /*height: 500px;*/
+    height: 100%;
+
+    background-color: lightgray;
+    border: 3px solid black;
+    border-radius: 20px;
+}
+
+.key :target {
+    background-color: darkgray;
+}
