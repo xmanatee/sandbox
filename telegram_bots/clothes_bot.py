@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# from telegram.files.photosize import
-# from telegram.files.inputfile import I
-# from telegram import InputMediaPhoto
 from telegram import InputMediaPhoto
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton)
-from telegram.ext import (CommandHandler, Updater, MessageHandler, Filters)
+from telegram.ext import (CommandHandler, Updater, MessageHandler, Filters, CallbackQueryHandler)
 
 import numpy as np
 
@@ -14,7 +11,7 @@ from tokens import tg_bot_token
 
 from os import makedirs, listdir, remove
 from os.path import join, exists
-from collections import defaultdict, Set
+from collections import defaultdict
 import logging
 import json
 
@@ -22,6 +19,9 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+
+public_chat_ids_filename = "./data/public_chat_ids.json"
+public_chat_ids = []
 
 admin_uns_filename = "./data/admin_uns.json"
 admin_uns = []
@@ -32,19 +32,29 @@ un_to_chat_id = {}
 chat_id_to_photo_ids_dir = "./data/photos"
 chat_id_to_photo_ids = defaultdict(set)
 
-def init():
-    global admin_uns, un_to_chat_id, chat_id_to_photo_ids
 
+def init():
+    global public_chat_ids, admin_uns, un_to_chat_id, chat_id_to_photo_ids
+
+    # uploading public_ids if exists
+    if exists(public_chat_ids_filename):
+        with open(public_chat_ids_filename, "r") as f:
+            public_chat_ids = json.load(f)
+        logging.info("Loaded public_ids")
+
+    # uploading admins usernames if exists
+    if exists(admin_uns_filename):
+        with open(admin_uns_filename, "r") as f:
+            admin_uns = json.load(f)
+        logging.info("Loaded admin_uns")
+
+    # uploading chat_ids if exists
     if exists(un_to_chat_id_filename):
         with open(un_to_chat_id_filename, "r") as f:
             un_to_chat_id = json.load(f)
         logging.info("Loaded chat_ids")
 
-    if exists(admin_uns_filename):
-        with open(admin_uns_filename, "r") as f:
-            admin_uns = json.load(f)
-        logging.info("Loaded admins")
-
+    # uploading photo_ids if exists
     if exists(chat_id_to_photo_ids_dir):
         for fn in listdir(chat_id_to_photo_ids_dir):
             if fn.endswith(".json"):
@@ -56,18 +66,25 @@ def init():
         makedirs(chat_id_to_photo_ids_dir)
 
 
-def update_users(chat_id, username):
-    if not username in un_to_chat_id:
-        un_to_chat_id[username] = chat_id
-        with open(un_to_chat_id_filename, "w") as f:
-            json.dump(un_to_chat_id, f)
-
-
 def update_admins(username):
     if not username in admin_uns:
         admin_uns.append(username)
         with open(admin_uns_filename, "w") as f:
             json.dump(admin_uns, f)
+
+
+def update_publics(chat_id):
+    if not chat_id in public_chat_ids:
+        public_chat_ids.append(chat_id)
+        with open(public_chat_ids_filename, "w") as f:
+            json.dump(public_chat_ids, f)
+
+
+def update_users(chat_id, username):
+    if not username in un_to_chat_id:
+        un_to_chat_id[username] = chat_id
+        with open(un_to_chat_id_filename, "w") as f:
+            json.dump(un_to_chat_id, f)
 
 
 def update_photos(chat_id, photos, reset=False):
@@ -84,8 +101,6 @@ def update_photos(chat_id, photos, reset=False):
 
     chat_id_to_photo_ids[chat_id].add(file_ids[i])
 
-    # chat_id_to_photo_ids[chat_id].update(photos)
-
     with open(fn, "w") as f:
         json.dump(list(chat_id_to_photo_ids[chat_id]), f)
 
@@ -93,23 +108,36 @@ def update_photos(chat_id, photos, reset=False):
 def start(bot, update):
     update.message.reply_text("Hi! I'm Clothes_Bot!\n"
                               "Send photos and i'll keep them in draft.\n"
-                              "Type /review and i'll send the draft for review\n"
-                              "Type /reset and i'll reset the draft\n")
+                              "Type /send and i'll send the draft for send\n"
+                              "Type /reset and i'll reset the draft\n"
+                              "Type password to become an admin or public.")
 
-def authorize(bot, update):
-    un = update.message.from_user.username
-    from_chat_id = update.message.chat.id
+
+def try_authorize(bot, update):
+    if update.channel_post:
+        un = update.channel_post.chat.username
+        from_chat_id = update.channel_post.chat.id
+        txt = update.channel_post.text
+    elif update.message:
+        un = update.message.from_user.username
+        from_chat_id = update.message.chat.id
+        txt = update.message.text
 
     update_users(from_chat_id, un)
 
     logging.info("text from {}".format(un))
 
-    if update.message.text == "4815162342":
+    if txt == "lalaka":
+        update_publics(from_chat_id)
+        logging.info("authorized in public {} by {}".format(from_chat_id, un))
+
+    if txt == "4815162342":
         update_admins(un)
+        logging.info("authorized by new admin {}".format(un))
 
 
 reply_keyboard = [[
-    "/review",
+    "/send",
     "/reset"
 ]]
 
@@ -117,7 +145,8 @@ reply_markup = ReplyKeyboardMarkup(reply_keyboard,
                                    one_time_keyboard=False)
 
 admin_keyboard = InlineKeyboardMarkup([[
-    InlineKeyboardButton("Approve", callback_data="approve_")
+    InlineKeyboardButton("Approve", callback_data="a"),
+    InlineKeyboardButton("Reject", callback_data="r")
 ]])
 
 
@@ -128,7 +157,6 @@ def photo(bot, update):
     logging.info("photo from {}".format(un))
 
     update_users(from_chat_id, un)
-
     update_photos(from_chat_id, update.message.photo)
 
     logging.info("updated for {} : {}".format(un, chat_id_to_photo_ids[from_chat_id]))
@@ -144,23 +172,21 @@ def reset(bot, update):
     from_chat_id = update.message.chat.id
     if not chat_id_to_photo_ids[from_chat_id]:
         update.message.reply_text("nothing to reset")
-                                  # reply_markup=ReplyKeyboardRemove())
         return True
 
     update.message.reply_text("photo buffer reset")
-                              # reply_markup=ReplyKeyboardRemove())
 
     update_photos(from_chat_id, [], reset=True)
 
     return True
 
 
-def review(bot, update):
+def send(bot, update):
     un = update.message.from_user.username
     from_chat_id = update.message.chat.id
 
     if not chat_id_to_photo_ids[from_chat_id]:
-        update.message.reply_text("nothing to review")
+        update.message.reply_text("nothing to send")
         return True
 
     media_group = [InputMediaPhoto(id) for id in chat_id_to_photo_ids[from_chat_id]]
@@ -177,6 +203,35 @@ def review(bot, update):
     bot.sendMessage(from_chat_id, "{} photos sent for review".format(photos_num))
 
     return reset(bot, update)
+
+
+def approve(bot, update):
+    query = update.callback_query
+
+    text = query.message.text
+    if query.data == "a":
+        text += " [Approved]"
+    elif query.data == "r":
+        text += " [Rejected]"
+    else:
+        return False
+
+    bot.edit_message_text(
+        text,
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id)
+
+    logging.info("sending to_publics {}".format(public_chat_ids))
+
+
+    for public_chat_id in public_chat_ids:
+        bot.forward_message(
+            chat_id=public_chat_id,
+            from_chat_id=query.message.chat_id,
+            message_id=query.message.message_id-1)
+        bot.sendMessage(
+            chat_id=public_chat_id,
+            text="Some photos")
 
 
 def log(bot, update):
@@ -197,12 +252,12 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(CommandHandler('review', review))
+    dp.add_handler(CommandHandler('send', send))
     dp.add_handler(CommandHandler('reset', reset))
 
-    dp.add_handler(MessageHandler(Filters.text, authorize))
-
+    dp.add_handler(MessageHandler(Filters.text, try_authorize))
     dp.add_handler(MessageHandler(Filters.photo, photo))
+    dp.add_handler(CallbackQueryHandler(approve))
 
     # dp.add_handler(MessageHandler(Filters.all, log))
 
