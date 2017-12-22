@@ -18,10 +18,10 @@ contract OrderNegotiator {
     struct Order {
         ORDER_STATUS status;
         uint value;
-        address store_addr;
-        address storage_addr;
-        address delivery_addr;
-        address client_addr;
+        // address store_addr;
+        // address storage_addr;
+        // address delivery_addr;
+        // address client_addr;
 
         mapping (bytes32 => address) addr;
 
@@ -100,8 +100,7 @@ contract OrderNegotiator {
     function store_close_order(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORE) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
         require(msg.sender == orders[order_id].store_addr);
         require(orders[order_id].addr[sha3(PARTY_TYPE.STORAGE)] == 0)
-        require(orders[order_id].storage_addr == 0);
-        require(orders[order_id].delivery_addr == 0);
+        require(orders[order_id].addr[sha3(PARTY_TYPE.DELIVERY)] == 0)
 
         msg.sender.transfer(orders[order_id].value - STORAGE_FEE - DELIVERY_FEE);
 
