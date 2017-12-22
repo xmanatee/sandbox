@@ -23,7 +23,7 @@ contract OrderNegotiator {
         address delivery_addr;
         address client_addr;
 
-        // mapping (bytes32 => address) addr;
+        mapping (bytes32 => address) addr;
 
         mapping (bytes32 => bool) confirm;
     }
@@ -55,7 +55,8 @@ contract OrderNegotiator {
     // Transition functions for order status
     function client_place_order(bytes32 order_id, address client_addr) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public payable {
         // require(msg.value >= ITEM_PRICE + STORAGE_FEE + DELIVERY_FEE);
-        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value, client_addr, 0, 0, msg.sender);
+        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value,
+                {client_addr, 0, 0, msg.sender});
     }
 
     function confirm(bytes32 order_id, PARTY_TYPE party) requireParty(party) public {
@@ -64,45 +65,41 @@ contract OrderNegotiator {
         orders[order_id].addr[sha3(party)] = msg.sender;
     }
 
-    function storage_receive(bytes32 order_id) requireOrderParty(PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.PLACED) public {
+    function storage_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.PLACED) public {
         orders[order_id].status = ORDER_STATUS.STORAGE_RECEIVED;
-        orders[order_id].storage_addr = msg.sender;
     }
 
-    function storage_release(bytes32 order_id) requireParty(PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RECEIVED) public {
+    function storage_release(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RECEIVED) public {
         orders[order_id].status = ORDER_STATUS.STORAGE_RELEASED;
     }
 
-    function delivery_receive(bytes32 order_id) requireParty(PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RELEASED) public {
+    function delivery_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RELEASED) public {
         orders[order_id].status = ORDER_STATUS.DELIVERY_RECEIVED;
-        orders[order_id].delivery_addr = msg.sender;
     }
 
-    function delivery_release(bytes32 order_id) requireParty(PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RECEIVED) public {
+    function delivery_release(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RECEIVED) public {
         orders[order_id].status = ORDER_STATUS.DELIVERY_RELEASED;
     }
 
-    function client_receive(bytes32 order_id) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RELEASED) public {
-        require(msg.sender == orders[order_id].client_addr);
+    function client_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.CLIENT) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RELEASED) public {
         orders[order_id].status = ORDER_STATUS.CLIENT_RECEIVED;
     }
 
 
     // All the parties get payed
-    function storage_withdraw_fee(bytes32 order_id) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
-        require(msg.sender == orders[order_id].storage_addr);
+    function storage_withdraw_fee(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
         msg.sender.transfer(STORAGE_FEE);
-        orders[order_id].storage_addr = 0;
+        orders[order_id].addr[sha3(PARTY_TYPE.STORAGE)] = 0
     }
 
-    function delivery_withdraw_fee(bytes32 order_id) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
-        require(msg.sender == orders[order_id].delivery_addr);
+    function delivery_withdraw_fee(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
         msg.sender.transfer(DELIVERY_FEE);
-        orders[order_id].delivery_addr = 0;
+        orders[order_id].addr[sha3(PARTY_TYPE.DELIVERY)] = 0
     }
 
-    function store_close_order(bytes32 order_id) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
+    function store_close_order(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORE) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.CLIENT_RECEIVED) public {
         require(msg.sender == orders[order_id].store_addr);
+        require(orders[order_id].addr[sha3(PARTY_TYPE.STORAGE)] == 0)
         require(orders[order_id].storage_addr == 0);
         require(orders[order_id].delivery_addr == 0);
 
