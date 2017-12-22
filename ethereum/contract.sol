@@ -18,12 +18,12 @@ contract OrderNegotiator {
     struct Order {
         ORDER_STATUS status;
         uint value;
-        // address store_addr;
-        // address storage_addr;
-        // address delivery_addr;
-        // address client_addr;
+        address store_addr;
+        address storage_addr;
+        address delivery_addr;
+        address client_addr;
 
-        mapping (bytes32 => address) addr;
+        // mapping (bytes32 => address) addr;
 
         mapping (bytes32 => bool) confirm;
     }
@@ -113,6 +113,10 @@ contract OrderNegotiator {
 
     function get_order_status(bytes32 order_id) constant public returns (ORDER_STATUS) {
         return orders[order_id].status;
+    }
+
+    function get_order_value(bytes32 order_id) constant public returns (uint) {
+        return orders[order_id].value;
     }
 
 }
