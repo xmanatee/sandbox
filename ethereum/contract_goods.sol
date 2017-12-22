@@ -52,10 +52,9 @@ contract OrderNegotiator {
     }
 
     // Transition functions for order status
-    function client_place_order(bytes32 order_id, address client_addr) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public payable {
+    function storage_place_order(bytes32 order_id, address client_addr) requireParty(PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public payable {
         // require(msg.value >= ITEM_PRICE + STORAGE_FEE + DELIVERY_FEE);
-        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value,
-                {client_addr, 0, 0, msg.sender});
+        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value, {msg.sender, 0});
     }
 
     function confirm(bytes32 order_id, PARTY_TYPE party) requireParty(party) public {
@@ -64,20 +63,21 @@ contract OrderNegotiator {
         orders[order_id].addr[sha3(party)] = msg.sender;
     }
 
-    function storage_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.PLACED) public {
-        orders[order_id].status = ORDER_STATUS.STORAGE_RECEIVED;
-    }
 
-    function storage_release(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RECEIVED) public {
-        orders[order_id].status = ORDER_STATUS.STORAGE_RELEASED;
-    }
-
-    function delivery_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RELEASED) public {
+    function delivery_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public {
         orders[order_id].status = ORDER_STATUS.DELIVERY_RECEIVED;
     }
 
     function delivery_release(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.DELIVERY) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RECEIVED) public {
         orders[order_id].status = ORDER_STATUS.DELIVERY_RELEASED;
+    }
+
+    function storage_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RELEASED) public {
+        orders[order_id].status = ORDER_STATUS.STORAGE_RECEIVED;
+    }
+
+    function storage_release(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.STORAGE_RECEIVED) public {
+        orders[order_id].status = ORDER_STATUS.STORAGE_RELEASED;
     }
 
     function client_receive(bytes32 order_id) requireOrderParty(order_id, PARTY_TYPE.CLIENT) requireOrderStatus(order_id, ORDER_STATUS.DELIVERY_RELEASED) public {
