@@ -2,7 +2,7 @@ pragma solidity ^0.4.13;
 
 contract OrderNegotiator {
 
-    enum PARTY_TYPE {STORE, STORAGE, DELIVERY, ADMIN}
+    enum PARTY_TYPE {NONE, CLIENT, STORE, STORAGE, DELIVERY, ADMIN}
     mapping (bytes32 => mapping (address => bool)) clients;
 
     enum ORDER_STATUS {
@@ -18,15 +18,24 @@ contract OrderNegotiator {
     struct Order {
         ORDER_STATUS status;
         uint value;
-        address store_addr;
-        address storage_addr;
-        address delivery_addr;
-        address client_addr;
+        // address store_addr;
+        // address storage_addr;
+        // address delivery_addr;
+        // address client_addr;
+
+        mapping (bytes32 => address) addr;
+
+        mapping (bytes32 => bool) confirm;
     }
     mapping (bytes32 => Order) orders;
 
     uint constant STORAGE_FEE = 1000;
     uint constant DELIVERY_FEE = 1000;
+
+    modifier requireOrderParty(bytes32 order_id, PARTY_TYPE party) {
+        require(orders[order_id].addr[sha3(party)] == msg.sender);
+        _;
+    }
 
     modifier requireParty(PARTY_TYPE party) {
         require(clients[sha3(party)][msg.sender]);
@@ -38,18 +47,24 @@ contract OrderNegotiator {
         _;
     }
 
+
     function add_authority(bytes32 party, address addr) requireParty(PARTY_TYPE.ADMIN) public {
         clients[party][addr] = true;
     }
 
     // Transition functions for order status
-
-    function store_place_order(bytes32 order_id, address client_addr) requireParty(PARTY_TYPE.STORE) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public payable {
-        require(msg.value >= STORAGE_FEE + DELIVERY_FEE);
-        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value, msg.sender, 0, 0, client_addr);
+    function client_place_order(bytes32 order_id, address client_addr) requireOrderStatus(order_id, ORDER_STATUS.DEFAULT) public payable {
+        // require(msg.value >= ITEM_PRICE + STORAGE_FEE + DELIVERY_FEE);
+        orders[order_id] = Order(ORDER_STATUS.PLACED, msg.value, client_addr, 0, 0, msg.sender);
     }
 
-    function storage_receive(bytes32 order_id) requireParty(PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.PLACED) public {
+    function confirm(bytes32 order_id, PARTY_TYPE party) requireParty(party) public {
+        request(orders[order_id].confirm[sha3(party)] == false);
+        orders[order_id].confirm[sha3(party)] = true;
+        orders[order_id].addr[sha3(party)] = msg.sender;
+    }
+
+    function storage_receive(bytes32 order_id) requireOrderParty(PARTY_TYPE.STORAGE) requireOrderStatus(order_id, ORDER_STATUS.PLACED) public {
         orders[order_id].status = ORDER_STATUS.STORAGE_RECEIVED;
         orders[order_id].storage_addr = msg.sender;
     }
