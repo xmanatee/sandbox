@@ -2,6 +2,7 @@ from data_management_2 import *
 from emoji import emojize
 
 import logging
+from message_texts import *
 
 from telegram import (InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto)
 
@@ -46,7 +47,7 @@ def approve(bot, update):
 
     text = query.message.text
 
-    button, media_group_id = query.data.split(",")
+    button, media_group_id, from_chat_id = query.data.split(",")
 
     if button == "a":
         text += " [Approved]"
@@ -71,9 +72,17 @@ def approve(bot, update):
         messages = bot.sendMediaGroup(channel_chat_id, media_group)
 
         bot.sendMessage(
-            text="HOTorNOT",
+            text=POLL_TEXT,
             chat_id=channel_chat_id,
             reply_markup=build_keyboard(0, 0))
+
+        notify_user_about_post(bot, from_chat_id)
+
+
+def notify_user_about_post(bot, from_chat_id):
+    bot.sendMessage(
+        text=USER_POST_NOTIFICATION_TEXT,
+        chat_id=from_chat_id)
 
 
 def inline_callback(bot, update):

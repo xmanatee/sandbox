@@ -1,12 +1,16 @@
 TODO:
 
 * Approve client notification
-* Join photos in mediagroup before publishing
 
 DONE:
+
 * Approve inline keyboard
 * Commands + keyboard
 * Join photos in mediaGroup before posting to admins.
+* Join photos in mediagroup before publishing
+* Use Sqlite for storing data
+* Added poll for client voting
+* Added emoji support for polls
 
 
 Links:

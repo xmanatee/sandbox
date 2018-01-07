@@ -90,8 +90,8 @@ def publish(bot, update):
     add_photo_ids(media_group_id, photo_ids)
 
     admin_keyboard = InlineKeyboardMarkup([[
-        InlineKeyboardButton("Approve", callback_data="a,{}".format(media_group_id)),
-        InlineKeyboardButton("Reject", callback_data="r,{}".format(media_group_id))
+        InlineKeyboardButton("Approve", callback_data="a,{},{}".format(media_group_id, from_chat_id)),
+        InlineKeyboardButton("Reject", callback_data="r,{},{}".format(media_group_id, from_chat_id))
     ]])
 
     for admin_chat_id in admin_chat_ids_f():

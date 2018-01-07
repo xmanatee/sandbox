@@ -8,6 +8,9 @@ PHOTOS_SENT_TEXT = "Your photos sent for review"
 
 ADDED_PHOTO = "Added to draft"
 
+POLL_TEXT = "HOT or NOT"
+
+USER_POST_NOTIFICATION_TEXT = "Your photoset had been posted. Check it out!"
 
 CHANNEL_PASSWORD = "lalaka"
 
