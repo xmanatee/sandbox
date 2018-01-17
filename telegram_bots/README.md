@@ -1,6 +1,5 @@
 TODO:
 
-* Approve client notification
 
 DONE:
 
@@ -11,6 +10,7 @@ DONE:
 * Use Sqlite for storing data
 * Added poll for client voting
 * Added emoji support for polls
+* Approve client notification
 
 
 Links:
