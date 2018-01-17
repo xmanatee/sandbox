@@ -10,6 +10,7 @@ from telegram import (InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhot
 # LEFT_BUTTON = ":+1:"
 LEFT_BUTTON = ":fire:"
 # LEFT_BUTTON = "\xF0\x9F\x94\xA5"
+
 # RIGHT_BUTTON = ":-1:"
 RIGHT_BUTTON = ":poop:"
 # RIGHT_BUTTON = "\xF0\x9F\x92\xA9"

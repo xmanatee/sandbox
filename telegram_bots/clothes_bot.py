@@ -7,8 +7,6 @@ import logging
 
 from message_texts import *
 
-# import random
-
 from telegram import (ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto)
 from telegram.ext import (CommandHandler, Updater, MessageHandler, Filters, CallbackQueryHandler)
 

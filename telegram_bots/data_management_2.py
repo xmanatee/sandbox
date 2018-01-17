@@ -1,3 +1,4 @@
+from os import makedirs
 import sqlite3
 
 import logging
@@ -51,6 +52,8 @@ def get_and_delete_photo_ids(media_group_id):
 
 def init():
     global conn, cursor
+
+    makedirs("./data", exist_ok=True)
 
     conn = sqlite3.connect('./data/bot_tables.sqlite', check_same_thread=False)
     cursor = conn.cursor()
