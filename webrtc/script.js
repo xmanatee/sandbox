@@ -36,16 +36,13 @@ pc.onaddstream = (event => friendsVideo.srcObject = event.stream);
 
 function sendMessage(senderId, data) {
     var msg = database.push({ sender: senderId, message: data });
-    console.log("1");
     msg.remove();
 }
 
 function readMessage(data) {
     var msg = JSON.parse(data.val().message);
-    console.log("2");
     var sender = data.val().sender;
     if (sender != yourId) {
-        console.log("3");
         if (msg.ice != undefined)
             pc.addIceCandidate(new RTCIceCandidate(msg.ice));
         else if (msg.sdp.type == "offer")

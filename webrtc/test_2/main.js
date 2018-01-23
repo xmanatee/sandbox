@@ -59,6 +59,7 @@ function showFriendsFace() {
     pc.createOffer()
         .then(offer => pc.setLocalDescription(offer))
         .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+    callButton.disabled = true;
 }
 
 window.onload = function () {

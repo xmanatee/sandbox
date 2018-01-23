@@ -1,16 +1,16 @@
 <html>
-  <head>
+<head>
     <script src="https://www.gstatic.com/firebasejs/3.6.4/firebase.js"></script>
     <script src="script.js"></script>
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="style.css">
-
-  </head>
-  <body>
-    <video id="yourVideo" autoplay muted></video>
-    <video id="friendsVideo" autoplay></video>
-    <br />
+    </head>
+<body>
+    <div id="videoBox">
+        <video id="friendsVideo" autoplay></video>
+        <video id="yourVideo" autoplay muted></video>
+    </div>
+    <!--<br />-->
     <button id="callButton" type="button" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-facetime-video" aria-hidden="true"></span> Call</button>
-  </body>
+</body>
 </html>
