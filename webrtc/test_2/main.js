@@ -1,9 +1,18 @@
+// var config = {
+//     apiKey: "AIzaSyCTw5HVSY8nZ7QpRp_gBOUyde_IPU9UfXU",
+//     authDomain: "websitebeaver-de9a6.firebaseapp.com",
+//     databaseURL: "https://websitebeaver-de9a6.firebaseio.com",
+//     storageBucket: "websitebeaver-de9a6.appspot.com",
+//     messagingSenderId: "411433309494"
+// };
+
 var config = {
-    apiKey: "AIzaSyCTw5HVSY8nZ7QpRp_gBOUyde_IPU9UfXU",
-    authDomain: "websitebeaver-de9a6.firebaseapp.com",
-    databaseURL: "https://websitebeaver-de9a6.firebaseio.com",
-    storageBucket: "websitebeaver-de9a6.appspot.com",
-    messagingSenderId: "411433309494"
+    apiKey: "AIzaSyDxU1dbXJhvJ_wFtAuKQiSNbi5rns3DPJs",
+    authDomain: "webrtc-test-a172f.firebaseapp.com",
+    databaseURL: "https://webrtc-test-a172f.firebaseio.com",
+    projectId: "webrtc-test-a172f",
+    storageBucket: "",
+    messagingSenderId: "22161990912"
 };
 
 var database;
@@ -15,7 +24,7 @@ var servers = {
     'iceServers': [
         {'urls': 'stun:stun.services.mozilla.com'},
         {'urls': 'stun:stun.l.google.com:19302'},
-        {'urls': 'turn:numb.viagenie.ca','credential': 'websitebeaver','username': 'websitebeaver@email.com'}]
+        {'urls': 'turn:numb.viagenie.ca', 'credential': 'websitebeaver', 'username': 'websitebeaver@email.com'}]
 };
 var pc;
 
@@ -53,9 +62,7 @@ function showFriendsFace() {
 }
 
 window.onload = function () {
-    console.log("0");
 
-    //Create an account on Firebase, and use the credentials they give you in place of the following
     firebase.initializeApp(config);
 
     database = firebase.database().ref();
@@ -65,9 +72,8 @@ window.onload = function () {
 
     yourId = Math.floor(Math.random()*1000000000);
 
-    console.log("1");
     pc = new RTCPeerConnection(servers);
-    console.log("2");
+
     pc.onicecandidate = (event => event.candidate ?
         sendMessage(yourId, JSON.stringify({'ice': event.candidate})) :
         console.log("Sent All Ice") );

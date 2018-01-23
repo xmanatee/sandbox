@@ -2,6 +2,8 @@
  * Simple signaling channel for WebRTC (use with channel_server.js).
  */
 
+var host = "http://localhost:8080";
+
 function SignalingChannel(sessionId) {
     if (!sessionId)
         sessionId = location.hash = location.hash.substr(1) || createId();
@@ -20,7 +22,7 @@ function SignalingChannel(sessionId) {
         return Math.random().toString(16).substr(2);
     };
 
-    var es = new EventSource("/stoc/" + sessionId + "/" + userId);
+    var es = new EventSource(host + "/stoc/" + sessionId + "/" + userId);
 
     es.onerror = function () {
         es.close();
@@ -77,7 +79,7 @@ function SignalingChannel(sessionId) {
 
         function processSendQueue() {
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/ctos/" + sessionId + "/" + userId + "/" + peerUserId);
+            xhr.open("POST", host + "/ctos/" + sessionId + "/" + userId + "/" + peerUserId);
             xhr.setRequestHeader("Content-Type", "text/plain");
             xhr.send(sendQueue[0]);
             xhr.onreadystatechange = function () {

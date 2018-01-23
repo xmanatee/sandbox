@@ -39,11 +39,11 @@ def try_authorize(bot, update):
 
     if txt == CHANNEL_PASSWORD:
         update_channels(from_chat_id)
-        logging.info("Authorized in channel {} by {}".format(from_chat_id, un))
+        # logging.info("Authorized in channel {} by {}".format(from_chat_id, un))
 
     if txt == ADMIN_PASSWORD:
         update_admins(from_chat_id)
-        logging.info("Authorized {} as new admin {}".format(from_chat_id, un))
+        # logging.info("Authorized {} as new admin {}".format(from_chat_id, un))
 
 
 def photo(bot, update):

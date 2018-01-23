@@ -74,9 +74,12 @@ window.onload = function () {
         // only chat
         if (!(videoCheckBox.checked || audioCheckBox.checked)) peerJoin();
 
+        console.log(1);
         function peerJoin() {
             var sessionId = document.getElementById("session_txt").value;
             signalingChannel = new SignalingChannel(sessionId);
+
+            console.log(2);
 
             // show and update share link
             var link = document.getElementById("share_link");
@@ -84,13 +87,18 @@ window.onload = function () {
             link.href = link.textContent = window.location.href + maybeAddHash;
             shareView.style.visibility = "visible";
 
+            console.log(3);
+
             callButton.onclick = function () {
                 start(true);
             };
 
+            console.log(4);
+
             // another peer has joined our session
             signalingChannel.onpeer = function (evt) {
 
+                console.log(5);
                 callButton.disabled = false;
                 shareView.style.visibility = "hidden";
 
@@ -136,8 +144,10 @@ window.onload = function () {
         window.location.assign("http://www.openwebrtc.org");
     };
 
+    console.log(7);
     var hash = location.hash.substr(1);
     if (hash) {
+        console.log(8);
         document.getElementById("session_txt").value = hash;
         log("Auto-joining session: " + hash);
         joinButton.click();

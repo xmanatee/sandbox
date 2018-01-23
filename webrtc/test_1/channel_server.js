@@ -37,7 +37,11 @@ function requestListener(request, response) {
     var headers = {
         "Cache-Control": "no-cache, no-store",
         "Pragma": "no-cache",
-        "Expires": "0"
+        "Expires": "0",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Headers": "origin, x-requested-with, content-type",
+        "Access-Control-Allow-Methods": "PUT, GET, POST, DELETE, OPTIONS"
     };
 
     var parts = request.url.split("/");

@@ -1,1 +1,1 @@
-tg_bot_token = "TELEGRAM_BOT_TOKEN"
+tg_bot_token = "394239080:AAGe_KAvGodaxdnnXgEWt0-7jRe1RFuc6mU"
