@@ -30,11 +30,15 @@ var pc = null;
 
 function setupIds() {
     var hash_id = window.location.href.indexOf('#');
-    if (hash_id === -1) {
+    console.log(hash_id);
+    if (hash_id !== -1) {
+        console.log("session_id from link");
         sessionId = window.location.href.substr(hash_id);
     } else if (localStorage.getItem("session_id")) {
+        console.log("session_id from cookie");
         sessionId = localStorage.getItem("session_id");
     } else {
+        console.log("session_id from random");
         sessionId = Math.random().toString(16).substr(4);
     }
     localStorage.setItem("session_id", sessionId);
