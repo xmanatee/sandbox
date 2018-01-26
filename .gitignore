@@ -1,6 +1,6 @@
 **/.idea/
 **/data/
-tokens.py
+/telegram_bots/tokens.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
