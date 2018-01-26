@@ -1,11 +1,4 @@
 //Create an account on Firebase, and use the credentials they give you in place of the following
-// var config = {
-//   apiKey: "AIzaSyCTw5HVSY8nZ7QpRp_gBOUyde_IPU9UfXU",
-//   authDomain: "websitebeaver-de9a6.firebaseapp.com",
-//   databaseURL: "https://websitebeaver-de9a6.firebaseio.com",
-//   storageBucket: "websitebeaver-de9a6.appspot.com",
-//   messagingSenderId: "411433309494"
-// };
 
 var config = {
     apiKey: "AIzaSyDxU1dbXJhvJ_wFtAuKQiSNbi5rns3DPJs",
@@ -16,23 +9,38 @@ var config = {
     messagingSenderId: "22161990912"
 };
 
+var servers = {'iceServers':[
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun.services.mozilla.com'}
+    ]};
+
 firebase.initializeApp(config);
 
-var database = firebase.database().ref();
+var database = null;
 var yourVideo = null;
 var friendsVideo = null;
+
+var sessionIdInput = null;
 var callButton = null;
 
-var yourId = Math.floor(Math.random()*1000000000);
+var yourId = null;
+var sessionId = null;
 
-var servers = {'iceServers':[
-    {'urls': 'stun:stun.services.mozilla.com'},
-    {'urls': 'stun:stun.l.google.com:19302'},
-    {'urls': 'turn:numb.viagenie.ca','credential': 'websitebeaver','username': 'websitebeaver@email.com'}]};
+var pc = null;
 
-var pc = new RTCPeerConnection(servers);
-pc.onicecandidate = (event => event.candidate?sendMessage(yourId, JSON.stringify({'ice': event.candidate})):console.log("Sent All Ice"));
-pc.onaddstream = (event => friendsVideo.srcObject = event.stream);
+function setupIds() {
+    var hash_id = window.location.href.indexOf('#');
+    if (hash_id === -1) {
+        sessionId = window.location.href.substr(hash_id);
+    } else if (localStorage.getItem("session_id")) {
+        sessionId = localStorage.getItem("session_id");
+    } else {
+        sessionId = Math.random().toString(16).substr(4);
+    }
+    localStorage.setItem("session_id", sessionId);
+    sessionIdInput.value = sessionId;
+    yourId = Math.floor(Math.random() * 1000000000);
+}
 
 function sendMessage(senderId, data) {
     var msg = database.push({ sender: senderId, message: data });
@@ -47,34 +55,59 @@ function readMessage(data) {
             pc.addIceCandidate(new RTCIceCandidate(msg.ice));
         else if (msg.sdp.type == "offer")
             pc.setRemoteDescription(new RTCSessionDescription(msg.sdp))
-              .then(() => pc.createAnswer())
-              .then(answer => pc.setLocalDescription(answer))
-              .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+                .then(() => pc.createAnswer())
+                .then(answer => pc.setLocalDescription(answer))
+                .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
         else if (msg.sdp.type == "answer")
             pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
     }
 };
 
-database.on('child_added', readMessage);
-
 function showMyFace() {
-  navigator.mediaDevices.getUserMedia({audio:true, video:true})
-    .then(stream => yourVideo.srcObject = stream)
-    .then(stream => pc.addStream(stream));
+    navigator.mediaDevices.getUserMedia({audio:true, video:true})
+        .then(stream => yourVideo.srcObject = stream)
+        .then(stream => pc.addStream(stream));
 }
 
-function showFriendsFace() {
-  pc.createOffer()
-    .then(offer => pc.setLocalDescription(offer) )
-    .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})) );
+function callClick() {
+    sessionId = sessionIdInput.value;
+    localStorage.setItem("session_id", sessionId);
+
+    var maybeAddHash = window.location.href.indexOf('#') !== -1 ? "" : ("#" + sessionId);
+    window.location.href = window.location.href + maybeAddHash;
+
+    database = firebase.database().ref(sessionId);
+    database.on('child_added', readMessage);
+
+    pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+}
+
+function startCall(event) {
+    callButton.disabled = true;
+    sessionInput.style.visibility='hidden';
+
+    console.log("startCall()");
+
+    friendsVideo.srcObject = event.stream;
 }
 
 window.onload = function () {
-    yourVideo = document.getElementById("yourVideo");
+    yourVideo = document.getElementById("your_video");
+    friendsVideo = document.getElementById("friends_video");
+    callButton = document.getElementById("call_button");
+    sessionIdInput = document.getElementById("session_id");
+
+    setupIds();
+
+    pc = new RTCPeerConnection(servers);
+    pc.onicecandidate = (event => event.candidate
+        ? sendMessage(yourId, JSON.stringify({'ice': event.candidate}))
+        : console.log("Sent All Ice"));
+    pc.onaddstream = startCall;
+
     showMyFace();
-    callButton = document.getElementById("callButton");
-    friendsVideo = document.getElementById("friendsVideo");
 
-
-    callButton.onclick = showFriendsFace;
+    callButton.onclick = callClick;
 };

@@ -19,21 +19,6 @@ var chatButton;
 var chatCheckBox;
 var channel;
 
-if (!window.hasOwnProperty("orientation"))
-    window.orientation = -90;
-
-var configuration = {
-  "iceServers": [
-  {
-    "urls": "stun:mmt-stun.verkstad.net"
-  },
-  {
-    "urls": "turn:mmt-turn.verkstad.net",
-    "username": "webrtc",
-    "credential": "secret"
-  }
-  ]
-};
 window.onload = function () {
     selfView = document.getElementById("self_view");
     remoteView = document.getElementById("remote_view");
@@ -48,52 +33,25 @@ window.onload = function () {
     chatDiv = document.getElementById("chat_div");
     chatCheckBox = document.getElementById("chat_cb");
 
-    // Store media preferences
-    audioCheckBox.onclick = videoCheckBox.onclick = chatCheckBox.onclick = function(evt) {
-        localStorage.setItem(this.id, this.checked);
-    };
-
-    audioCheckBox.checked = localStorage.getItem("audio_cb") == "true";
-    videoCheckBox.checked = localStorage.getItem("video_cb") == "true";
-
-    chatCheckBox.checked = localStorage.getItem("chat_cb") == "true";
-
-    // Check video box if no preferences exist
-    if (!localStorage.getItem("video_cb"))
-        videoCheckBox.checked = true;
-
     joinButton.disabled = !navigator.mediaDevices.getUserMedia;
     joinButton.onclick = function (evt) {
-        if (!(audioCheckBox.checked || videoCheckBox.checked || chatCheckBox.checked)) {
-            alert("Choose at least audio, video or chat.");
-            return;
-        }
 
         audioCheckBox.disabled = videoCheckBox.disabled = chatCheckBox.disabled = joinButton.disabled = true;
 
         // only chat
         if (!(videoCheckBox.checked || audioCheckBox.checked)) peerJoin();
 
-        console.log(1);
         function peerJoin() {
             var sessionId = document.getElementById("session_txt").value;
             signalingChannel = new SignalingChannel(sessionId);
 
-            console.log(2);
-
             // show and update share link
             var link = document.getElementById("share_link");
-            var maybeAddHash = window.location.href.indexOf('#') !== -1 ? "" : ("#" + sessionId);
-            link.href = link.textContent = window.location.href + maybeAddHash;
             shareView.style.visibility = "visible";
-
-            console.log(3);
 
             callButton.onclick = function () {
                 start(true);
             };
-
-            console.log(4);
 
             // another peer has joined our session
             signalingChannel.onpeer = function (evt) {
@@ -139,23 +97,7 @@ window.onload = function () {
             }).catch(logError);
         }
     };
-
-    document.getElementById("owr-logo").onclick = function() {
-        window.location.assign("http://www.openwebrtc.org");
-    };
-
-    console.log(7);
-    var hash = location.hash.substr(1);
-    if (hash) {
-        console.log(8);
-        document.getElementById("session_txt").value = hash;
-        log("Auto-joining session: " + hash);
-        joinButton.click();
-    } else {
-        // set a random session id
-        document.getElementById("session_txt").value = Math.random().toString(16).substr(4);
-    }
-};
+}
 
 // handle signaling messages received from the other peer
 function handleMessage(evt) {
@@ -173,9 +115,6 @@ function handleMessage(evt) {
             if (pc.remoteDescription.type == "offer")
                 pc.createAnswer(localDescCreated, logError);
         }, logError);
-    } else if (!isNaN(message.orientation) && remoteView) {
-        var transform = "rotate(" + message.orientation + "deg)";
-        remoteView.style.transform = remoteView.style.webkitTransform = transform;
     } else {
         var d = message.candidate.candidateDescription;
         message.candidate.candidate = "candidate:" + [
@@ -235,7 +174,6 @@ function start(isInitiator) {
             remoteView.style.visibility = "visible";
         else if (audioCheckBox.checked && !(chatCheckBox.checked))
             audioOnlyView.style.visibility = "visible";
-        sendOrientationUpdate();
     };
 
     if (audioCheckBox.checked || videoCheckBox.checked) {
@@ -259,20 +197,6 @@ function localDescCreated(desc) {
         console.log(logMessage);
     }, logError);
 }
-
-function sendOrientationUpdate() {
-    peer.send(JSON.stringify({ "orientation": window.orientation + 90 }));
-}
-
-window.onorientationchange = function () {
-    if (peer)
-        sendOrientationUpdate();
-
-    if (selfView) {
-        var transform = "rotate(" + (window.orientation + 90) + "deg)";
-        selfView.style.transform = selfView.style.webkitTransform = transform;
-    }
-};
 
 function logError(error) {
     if (error) {
