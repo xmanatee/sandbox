@@ -60,6 +60,13 @@ function readMessage(data) {
             console.log("1");
         } else if (msg.sdp.type == "offer") {
             console.log("2");
+
+            pc = new RTCPeerConnection(servers);
+            pc.onicecandidate = (event => event.candidate
+                ? sendMessage(yourId, JSON.stringify({'ice': event.candidate}))
+                : console.log("Sent All Ice"));
+            pc.onaddstream = startCall;
+
             pc.setRemoteDescription(new RTCSessionDescription(msg.sdp))
                 .then(() => pc.createAnswer())
                 .then(answer => pc.setLocalDescription(answer))
@@ -93,6 +100,12 @@ function callClick() {
     videoBox.style.height = '90%';
 
     database = firebase.database().ref(sessionId);
+    // var my_snap = null;
+    // database.once("value", function(snapshot) {
+    //     my_snap = snapshot;
+    //     return snapshot;
+    // }).then((snapshot) => console.log(snapshot));
+
     database.on('child_added', readMessage);
 
     pc.createOffer()
