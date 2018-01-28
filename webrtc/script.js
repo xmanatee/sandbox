@@ -34,8 +34,8 @@ function setupIds() {
     var hash_id = window.location.href.indexOf('#');
     if (hash_id !== -1) {
         sessionId = window.location.href.substring(hash_id + 1);
-    } else if (localStorage.getItem("session_id")) {
-        sessionId = localStorage.getItem("session_id");
+    // } else if (localStorage.getItem("session_id")) {
+    //     sessionId = localStorage.getItem("session_id");
     } else {
         // console.log("session_id from random");
         sessionId = Math.random().toString(16).substr(4);
@@ -51,7 +51,7 @@ function sendMessage(senderId, data) {
 }
 
 function readMessage(data) {
-    // console.log("readMessage(data = ", data.val(), ")");
+    console.log("readMessage(data = ", data.val(), ")");
     var msg = JSON.parse(data.val().message);
     var sender = data.val().sender;
     if (sender != yourId) {
@@ -103,11 +103,20 @@ function callClick() {
     videoBox.style.height = '90%';
 
     database = firebase.database().ref(sessionId);
+    // var my_snap = null;
+    // database.once("value", function(snapshot) {
+    //     my_snap = snapshot;
+    //     return snapshot;
+    // }).then((snapshot) => console.log(snapshot));
+
     database.on('child_added', readMessage);
 
 
     sendMessage(yourId, JSON.stringify({"status": "ready"}));
     console.log("sent status ready");
+    // pc.createOffer()
+    //     .then(offer => pc.setLocalDescription(offer))
+    //     .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
 }
 
 function startCall(event) {
@@ -118,11 +127,15 @@ function startCall(event) {
     friendsVideo.srcObject = event.stream;
 }
 
-function endCall() {
+function endCall(event) {
     callButton.innerHTML = "Call ended";
     console.log("endCall()");
     friendsVideo.srcObject = null;
-    pc.close();
+}
+
+function log(event) {
+    console.log("LOG");
+    console.log(event);
 }
 
 window.onload = function () {
@@ -139,12 +152,14 @@ window.onload = function () {
         ? sendMessage(yourId, JSON.stringify({'ice': event.candidate}))
         : console.log("Sent All Ice"));
     pc.onaddstream = startCall;
+    // pc.oniceconnectionstatechange = log;
+    // pc.onicegatheringstatechange = log;
 
     showMyFace();
 
     callButton.onclick = callClick;
 };
 
-window.onbeforeunload = function () {
+window.onunload = function () {
     sendMessage(yourId, JSON.stringify({"status": "disconnecting"}));
 };
