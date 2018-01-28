@@ -51,16 +51,20 @@ function sendMessage(senderId, data) {
 }
 
 function readMessage(data) {
-    console.log("readMessage(data = ", data.val(), ")");
+    // console.log("readMessage(data = ", data.val(), ")");
     var msg = JSON.parse(data.val().message);
     var sender = data.val().sender;
     if (sender != yourId) {
         if (msg.status != undefined) {
-            console.log("receved status ready");
-            pc.createOffer()
-                .then(offer => pc.setLocalDescription(offer))
-                .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
-            console.log("sent offer");
+            if (msg.status == "ready") {
+                console.log("receved status ready");
+                pc.createOffer()
+                    .then(offer => pc.setLocalDescription(offer))
+                    .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+                console.log("sent offer");
+            } else if (msg.status == "disconnecting") {
+                endCall();
+            }
         } else if (msg.ice != undefined) {
             pc.addIceCandidate(new RTCIceCandidate(msg.ice));
             console.log("added ice candidate");
@@ -99,20 +103,11 @@ function callClick() {
     videoBox.style.height = '90%';
 
     database = firebase.database().ref(sessionId);
-    // var my_snap = null;
-    // database.once("value", function(snapshot) {
-    //     my_snap = snapshot;
-    //     return snapshot;
-    // }).then((snapshot) => console.log(snapshot));
-
     database.on('child_added', readMessage);
 
 
-    sendMessage(yourId, JSON.stringify({'status': "ready"}));
+    sendMessage(yourId, JSON.stringify({"status": "ready"}));
     console.log("sent status ready");
-    // pc.createOffer()
-    //     .then(offer => pc.setLocalDescription(offer))
-    //     .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
 }
 
 function startCall(event) {
@@ -121,6 +116,13 @@ function startCall(event) {
     console.log("startCall()");
 
     friendsVideo.srcObject = event.stream;
+}
+
+function endCall() {
+    callButton.innerHTML = "Call ended";
+    console.log("endCall()");
+    friendsVideo.srcObject = null;
+    pc.close();
 }
 
 window.onload = function () {
@@ -141,4 +143,8 @@ window.onload = function () {
     showMyFace();
 
     callButton.onclick = callClick;
+};
+
+window.onbeforeunload = function () {
+    sendMessage(yourId, JSON.stringify({"status": "disconnecting"}));
 };
