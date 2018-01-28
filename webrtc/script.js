@@ -51,31 +51,30 @@ function sendMessage(senderId, data) {
 }
 
 function readMessage(data) {
+    console.log("readMessage(data = ", data.val(), ")");
     var msg = JSON.parse(data.val().message);
     var sender = data.val().sender;
     if (sender != yourId) {
-        if (msg.ice != undefined) {
-            console.log("1");
+        if (msg.status != undefined) {
+            console.log("receved status ready");
+            pc.createOffer()
+                .then(offer => pc.setLocalDescription(offer))
+                .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+            console.log("sent offer");
+        } else if (msg.ice != undefined) {
             pc.addIceCandidate(new RTCIceCandidate(msg.ice));
-            console.log("1");
+            console.log("added ice candidate");
         } else if (msg.sdp.type == "offer") {
-            console.log("2");
-
-            pc = new RTCPeerConnection(servers);
-            pc.onicecandidate = (event => event.candidate
-                ? sendMessage(yourId, JSON.stringify({'ice': event.candidate}))
-                : console.log("Sent All Ice"));
-            pc.onaddstream = startCall;
-
+            console.log("received offer");
             pc.setRemoteDescription(new RTCSessionDescription(msg.sdp))
                 .then(() => pc.createAnswer())
                 .then(answer => pc.setLocalDescription(answer))
                 .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
-            console.log("2");
+            console.log("sent answer");
         } else if (msg.sdp.type == "answer") {
-            console.log("3");
+            console.log("received answer");
             pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-            console.log("3");
+            console.log("set remote descrobtion");
         }
     }
 };
@@ -95,7 +94,7 @@ function callClick() {
     window.location.href = window.location.href.substring(0, hash_id) + "#" + sessionId;
 
     callButton.disabled = true;
-    callButton.innerHTML = "Waddup...";
+    callButton.innerHTML = "Connecting...";
     sessionIdInput.style.display = 'none'; // .visibility='hidden';
     videoBox.style.height = '90%';
 
@@ -108,9 +107,12 @@ function callClick() {
 
     database.on('child_added', readMessage);
 
-    pc.createOffer()
-        .then(offer => pc.setLocalDescription(offer))
-        .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
+
+    sendMessage(yourId, JSON.stringify({'status': "ready"}));
+    console.log("sent status ready");
+    // pc.createOffer()
+    //     .then(offer => pc.setLocalDescription(offer))
+    //     .then(() => sendMessage(yourId, JSON.stringify({'sdp': pc.localDescription})));
 }
 
 function startCall(event) {
