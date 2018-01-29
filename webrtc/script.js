@@ -16,7 +16,7 @@ var servers = {'iceServers':[
 
 firebase.initializeApp(config);
 
-var database = null;
+var sessionRef = null;
 
 var videoBox = null;
 var yourVideo = null;
@@ -45,7 +45,7 @@ function setupIds() {
 }
 
 function sendMessage(senderId, data) {
-    var msg = database.push({ sender: senderId, message: data });
+    var msg = sessionRef.push({ sender: senderId, message: data });
     msg.remove();
 }
 
@@ -101,8 +101,8 @@ function callClick() {
     sessionIdInput.style.display = 'none'; // .visibility='hidden';
     videoBox.style.height = '90%';
 
-    database = firebase.database().ref(sessionId);
-    database.on('child_added', readMessage);
+    sessionRef = firebase.database().ref(sessionId);
+    sessionRef.on('child_added', readMessage);
 
 
     sendMessage(yourId, JSON.stringify({"status": "ready"}));
@@ -120,6 +120,9 @@ function endCall(event) {
     callButton.innerHTML = "Call ended";
     console.log("endCall()");
     friendsVideo.srcObject = null;
+    pc.close();
+    sessionRef.remove()
+        .then(() => console.log("deleted sessionRef."));
 }
 
 window.onload = function () {
@@ -143,5 +146,7 @@ window.onload = function () {
 };
 
 window.onunload = function () {
+    sessionRef.off('child_added', readMessage);
     sendMessage(yourId, JSON.stringify({"status": "disconnecting"}));
+    pc.close();
 };
