@@ -145,7 +145,7 @@ window.onload = function () {
     callButton.onclick = callClick;
 };
 
-window.onunload = function () {
+window.onbeforeunload = function () {
     sessionRef.off('child_added', readMessage);
     sendMessage(yourId, JSON.stringify({"status": "disconnecting"}));
     pc.close();
